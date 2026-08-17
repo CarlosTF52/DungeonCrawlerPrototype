@@ -29,3 +29,10 @@ Reason: Third-person better supports animation readability, character gear visib
 Decision: Store project management docs in `ProjectDocs` inside the Unity project folder.
 
 Reason: Keep project planning close to the Unity project while avoiding clutter in gameplay folders.
+
+## 2026-08-17 - Git Default Branch
+
+Decision: Keep the repository default branch as `master`.
+
+Reason: The repository is already initialized this way, and the branch name does not affect the prototype workflow.
+

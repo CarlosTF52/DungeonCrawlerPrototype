@@ -15,6 +15,7 @@ Define the prototype scope and prepare the Unity project for Milestone 1: One Go
 - The project direction is fantasy survival-horror dungeon crawler with a village hub.
 - Prototype first, expand only after the loop is fun.
 - Third-person is the default recommended perspective for the prototype.
+- The GitHub default branch will remain `master`.
 
 ## Active Milestone
 
@@ -24,7 +25,6 @@ Milestone 0 - Project Setup.
 
 - Confirm Unity version.
 - Confirm render pipeline.
-- Decide whether to initialize git in the Unity project folder.
 - Create a minimal asset shortlist for Milestone 1.
 - Create feature tasks for combat, hub loop, dungeon structure, and inventory/upgrades.
 
@@ -34,3 +34,4 @@ Milestone 0 - Project Setup.
 - Mixing low-poly and realistic assets may create visual inconsistency.
 - Large systems can pull the project away from the core loop before it is fun.
 - First-person melee may be harder to make readable than third-person melee.
+
