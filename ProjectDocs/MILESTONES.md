@@ -1,33 +1,45 @@
-﻿# Milestones
+# Milestones
 
 ## Milestone 0 - Project Setup
+
+Status: Effectively complete.
 
 Goal: Create a clean Unity project foundation.
 
 Done when:
 
-- Unity project exists.
-- Render pipeline decision is made.
-- Version control decision is made.
-- ProjectDocs folder exists.
-- Initial scope, milestones, status, and decision log exist.
+- Unity project exists. Done.
+- Render pipeline decision is made. Needs explicit doc confirmation.
+- Version control decision is made. Done: GitHub repo on `master`.
+- ProjectDocs folder exists. Done.
+- Initial scope, milestones, status, and decision log exist. Done.
 
 ## Milestone 1 - One Good Run
+
+Status: Active.
 
 Goal: Prove the core loop with placeholder-quality content.
 
 Done when:
 
-- Player starts in the village hub.
-- Player can enter one dungeon.
-- Player can explore a small dungeon route.
-- Player can fight at least one enemy.
-- Player can collect loot or a key item.
-- Player can return to the village.
-- Player can buy one upgrade.
-- The loop can be repeated once.
+- Player starts in the village hub. In progress.
+- Player can enter one dungeon. Working through `ExpeditionGateway`.
+- Player can explore a small dungeon route. In progress.
+- Player can fight at least one enemy. Working.
+- Player can collect loot or a key item. Working during an active expedition.
+- Player can return to the village. Working through extraction flow.
+- Player can buy or trigger one upgrade. Not started.
+- The loop can be repeated once. Not proven yet.
+
+Current Milestone 1 focus:
+
+- Bank extracted loot into a persistent village/hub inventory.
+- Show a simple hub-side result after extraction.
+- Keep the run loop small enough to test repeatedly.
 
 ## Milestone 2 - Tension Pass
+
+Status: Not started.
 
 Goal: Make the run feel like survival horror, not a generic action test.
 
@@ -41,6 +53,8 @@ Done when:
 
 ## Milestone 3 - Hub Meaning
 
+Status: Not started.
+
 Goal: Make the village feel worth returning to.
 
 Done when:
@@ -51,6 +65,8 @@ Done when:
 - The player has a clear reason to attempt the next run.
 
 ## Milestone 4 - Vertical Slice Candidate
+
+Status: Not started.
 
 Goal: Combine the loop, mood, and progression into a short representative experience.
 

@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 
 public class MeleeAttack : MonoBehaviour
 {
+    [SerializeField] private EntityStats stats;
     [SerializeField] private CombatTeam attackerTeam = CombatTeam.Player;
     [SerializeField] private int damage = 2;
     [SerializeField] private float range = 1.5f;
@@ -32,6 +33,11 @@ public class MeleeAttack : MonoBehaviour
     private void Reset()
     {
         attackOrigin = transform;
+    }
+
+    private void Awake()
+    {
+        ResolveStats();
     }
 
     private void OnValidate()
@@ -85,9 +91,14 @@ public class MeleeAttack : MonoBehaviour
 
             if (damageable != null && damagedTargets.Add(damageable))
             {
-                damageable.TryTakeDamage(damage, attackerTeam, gameObject);
+                damageable.TryTakeDamage(GetDamage(), attackerTeam, gameObject);
             }
         }
+    }
+
+    private int GetDamage()
+    {
+        return stats != null ? stats.AttackPower : damage;
     }
 
     private bool WasAttackPressed()
@@ -114,5 +125,20 @@ public class MeleeAttack : MonoBehaviour
         Transform origin = attackOrigin != null ? attackOrigin : transform;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(origin.position + origin.forward * range, radius);
+    }
+
+    private void ResolveStats()
+    {
+        if (stats != null)
+        {
+            return;
+        }
+
+        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+
+        if (provider != null)
+        {
+            stats = provider.Stats;
+        }
     }
 }

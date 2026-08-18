@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class PlayerWeaponHitbox : MonoBehaviour
 {
+    [SerializeField] private EntityStats stats;
     [SerializeField] private CombatTeam attackerTeam = CombatTeam.Player;
     [SerializeField] private int damage = 2;
     [SerializeField] private Collider hitboxCollider;
@@ -14,6 +15,8 @@ public class PlayerWeaponHitbox : MonoBehaviour
 
     private void Awake()
     {
+        ResolveStats();
+
         if (hitboxCollider == null)
         {
             hitboxCollider = GetComponent<Collider>();
@@ -87,8 +90,13 @@ public class PlayerWeaponHitbox : MonoBehaviour
 
         if (damageable != null && damagedTargets.Add(damageable))
         {
-            damageable.TryTakeDamage(damage, attackerTeam, gameObject);
+            damageable.TryTakeDamage(GetDamage(), attackerTeam, gameObject);
         }
+    }
+
+    private int GetDamage()
+    {
+        return stats != null ? stats.AttackPower : damage;
     }
 
     private bool CanHitCollider(Collider other)
@@ -116,6 +124,21 @@ public class PlayerWeaponHitbox : MonoBehaviour
         if (hitboxCollider != null)
         {
             hitboxCollider.enabled = enabled;
+        }
+    }
+
+    private void ResolveStats()
+    {
+        if (stats != null)
+        {
+            return;
+        }
+
+        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+
+        if (provider != null)
+        {
+            stats = provider.Stats;
         }
     }
 }

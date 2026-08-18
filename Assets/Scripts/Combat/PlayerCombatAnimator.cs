@@ -13,6 +13,7 @@ public class PlayerCombatAnimator : MonoBehaviour
     [SerializeField] private AnimationClip swingAnimation;
     [SerializeField] private MeleeAttack meleeAttack;
     [SerializeField] private PlayerWeaponHitbox weaponHitbox;
+    [SerializeField] private StaminaPool staminaPool;
     [SerializeField] private float fadeDuration = 0.05f;
     [SerializeField] private float playbackSpeed = 1f;
     [SerializeField, Range(0f, 1f)] private float hitStartNormalizedTime = 0.25f;
@@ -44,6 +45,11 @@ public class PlayerCombatAnimator : MonoBehaviour
         {
             weaponHitbox = GetComponentInChildren<PlayerWeaponHitbox>();
         }
+
+        if (staminaPool == null)
+        {
+            staminaPool = GetComponentInParent<StaminaPool>();
+        }
     }
 
     private void OnValidate()
@@ -72,6 +78,11 @@ public class PlayerCombatAnimator : MonoBehaviour
         }
 
         if (isSwinging && !allowRestartSwing)
+        {
+            return false;
+        }
+
+        if (staminaPool != null && !staminaPool.TrySpendAttackCost())
         {
             return false;
         }

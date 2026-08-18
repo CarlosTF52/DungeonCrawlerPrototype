@@ -3,6 +3,7 @@ using UnityEngine.Events;
 
 public class Damageable : MonoBehaviour
 {
+    [SerializeField] private EntityStats stats;
     [SerializeField] private CombatTeam team = CombatTeam.Neutral;
     [SerializeField] private int maxHealth = 10;
     [SerializeField] private float invincibilityDuration;
@@ -15,7 +16,7 @@ public class Damageable : MonoBehaviour
 
     public CombatTeam Team => team;
     public int CurrentHealth { get; private set; }
-    public int MaxHealth => maxHealth;
+    public int MaxHealth => stats != null ? stats.MaxHealth : maxHealth;
     public bool IsAlive => CurrentHealth > 0;
     public GameObject LastDamageSource { get; private set; }
     public bool IsInvincible => Time.time < invincibleUntilTime;
@@ -24,7 +25,8 @@ public class Damageable : MonoBehaviour
 
     private void Awake()
     {
-        CurrentHealth = Mathf.Max(1, maxHealth);
+        ResolveStats();
+        CurrentHealth = MaxHealth;
     }
 
     private void OnValidate()
@@ -35,8 +37,8 @@ public class Damageable : MonoBehaviour
 
     public void RestoreToFullHealth()
     {
-        CurrentHealth = maxHealth;
-        healthChanged?.Invoke(CurrentHealth, maxHealth);
+        CurrentHealth = MaxHealth;
+        healthChanged?.Invoke(CurrentHealth, MaxHealth);
     }
 
     public bool CanBeDamagedBy(CombatTeam attackerTeam)
@@ -53,9 +55,9 @@ public class Damageable : MonoBehaviour
 
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
         LastDamageSource = source;
-        invincibleUntilTime = Time.time + invincibilityDuration;
+        invincibleUntilTime = Time.time + GetInvincibilityDuration();
         damaged?.Invoke();
-        healthChanged?.Invoke(CurrentHealth, maxHealth);
+        healthChanged?.Invoke(CurrentHealth, MaxHealth);
 
         if (CurrentHealth == 0)
         {
@@ -72,8 +74,8 @@ public class Damageable : MonoBehaviour
             return;
         }
 
-        CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
-        healthChanged?.Invoke(CurrentHealth, maxHealth);
+        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
+        healthChanged?.Invoke(CurrentHealth, MaxHealth);
     }
 
     private void Die(GameObject source)
@@ -83,6 +85,26 @@ public class Damageable : MonoBehaviour
         if (destroyOnDeath)
         {
             Destroy(gameObject);
+        }
+    }
+
+    private float GetInvincibilityDuration()
+    {
+        return stats != null ? stats.InvincibilityDuration : invincibilityDuration;
+    }
+
+    private void ResolveStats()
+    {
+        if (stats != null)
+        {
+            return;
+        }
+
+        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+
+        if (provider != null)
+        {
+            stats = provider.Stats;
         }
     }
 }

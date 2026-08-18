@@ -21,6 +21,13 @@ namespace StarterAssets
 		[Tooltip("Acceleration and deceleration")]
 		public float SpeedChangeRate = 10.0f;
 
+		[Header("External Movement")]
+		[Tooltip("How quickly external movement such as knockback fades out")]
+		public float ExternalVelocityDamping = 14.0f;
+
+		[Header("Stamina")]
+		[SerializeField] private StaminaPool staminaPool;
+
 		[Space(10)]
 		[Tooltip("The height the player can jump")]
 		public float JumpHeight = 1.2f;
@@ -59,6 +66,7 @@ namespace StarterAssets
 		private float _rotationVelocity;
 		private float _verticalVelocity;
 		private float _terminalVelocity = 53.0f;
+		private Vector3 _externalVelocity;
 
 		// timeout deltatime
 		private float _jumpTimeoutDelta;
@@ -99,6 +107,10 @@ namespace StarterAssets
 		{
 			_controller = GetComponent<CharacterController>();
 			_input = GetComponent<StarterAssetsInputs>();
+			if (staminaPool == null)
+			{
+				staminaPool = GetComponentInParent<StaminaPool>();
+			}
 #if ENABLE_INPUT_SYSTEM
 			_playerInput = GetComponent<PlayerInput>();
 #else
@@ -153,8 +165,11 @@ namespace StarterAssets
 
 		private void Move()
 		{
+			bool wantsToSprint = _input.sprint && _input.move != Vector2.zero;
+			bool canSprint = wantsToSprint && CanSpendSprintStamina();
+
 			// set target speed based on move speed, sprint speed and if sprint is pressed
-			float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+			float targetSpeed = canSprint ? SprintSpeed : MoveSpeed;
 
 			// a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -194,8 +209,22 @@ namespace StarterAssets
 				inputDirection = transform.right * _input.move.x + transform.forward * _input.move.y;
 			}
 
-			// move the player
-			_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+			Vector3 movement = inputDirection.normalized * (_speed * Time.deltaTime)
+				+ _externalVelocity * Time.deltaTime
+				+ new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime;
+
+			_controller.Move(movement);
+			_externalVelocity = Vector3.Lerp(_externalVelocity, Vector3.zero, Time.deltaTime * ExternalVelocityDamping);
+		}
+
+		public void AddExternalVelocity(Vector3 velocity)
+		{
+			_externalVelocity += velocity;
+		}
+
+		private bool CanSpendSprintStamina()
+		{
+			return staminaPool == null || staminaPool.TrySpendSprintCost(Time.deltaTime);
 		}
 
 		private void JumpAndGravity()

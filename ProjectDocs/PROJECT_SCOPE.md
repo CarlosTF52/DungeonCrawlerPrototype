@@ -1,8 +1,8 @@
-﻿# Dungeon Crawler Prototype - Project Scope
+# Dungeon Crawler Prototype - Project Scope
 
 ## North Star
 
-A fantasy survival-horror dungeon crawler where the player leaves a fragile village hub, enters dangerous cursed spaces, survives deliberate encounters, returns with loot or survivors, and uses those gains to rebuild, upgrade, and push deeper.
+A grim fantasy survival-horror dungeon crawler inspired by the expedition pressure of Darkest Dungeon, but played through action 3D combat. The player leaves a fragile village hub, enters dangerous cursed spaces, survives deliberate encounters, returns with loot or survivors, and uses those gains to rebuild, upgrade, and push deeper.
 
 ## Prototype Goal
 
@@ -14,6 +14,15 @@ The prototype should answer:
 - Is combat methodical, readable, and satisfying?
 - Is returning to the village with loot or a rescued survivor rewarding?
 - Does one upgrade make the player want to do another run?
+
+
+## Reference Direction
+
+The project should draw inspiration from Darkest Dungeon's first-game structure and mood: dangerous expeditions, preparation pressure, attrition, survivor management, stress, dread, and a hub that matters between runs.
+
+This is a reference for direction, not a clone target. The prototype should translate that kind of expedition pressure into 3D action combat, spatial exploration, horror atmosphere, and hands-on survival decisions.
+
+For the first prototype, prioritize expedition pressure before deep roster management or complex affliction systems.
 
 ## Core Loop
 
@@ -67,3 +76,5 @@ The prototype should answer:
 Default recommendation: third-person.
 
 Reason: third-person better showcases models, animations, armor, enemy silhouettes, and deliberate melee combat. First-person can be revisited if horror immersion becomes more important than animation readability.
+
+

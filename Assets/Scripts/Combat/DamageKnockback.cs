@@ -1,4 +1,5 @@
 using System.Collections;
+using StarterAssets;
 using UnityEngine;
 
 public class DamageKnockback : MonoBehaviour
@@ -7,7 +8,10 @@ public class DamageKnockback : MonoBehaviour
     [SerializeField] private CharacterController characterController;
     [SerializeField] private Rigidbody attachedRigidbody;
     [SerializeField] private SimpleEnemyChase enemyChase;
+    [SerializeField] private FirstPersonController firstPersonController;
+    [SerializeField] private bool preferRigidbody;
     [SerializeField] private float distance = 0.35f;
+    [SerializeField] private bool useUpwardImpulse = true;
     [SerializeField] private float upwardImpulse = 2f;
     [SerializeField] private float duration = 0.08f;
     [SerializeField] private float staggerDuration = 0.25f;
@@ -24,6 +28,11 @@ public class DamageKnockback : MonoBehaviour
         if (characterController == null)
         {
             characterController = GetComponent<CharacterController>();
+        }
+
+        if (firstPersonController == null)
+        {
+            firstPersonController = GetComponent<FirstPersonController>();
         }
 
         if (attachedRigidbody == null)
@@ -70,9 +79,15 @@ public class DamageKnockback : MonoBehaviour
             enemyChase.Stagger(staggerDuration);
         }
 
-        if (attachedRigidbody != null && !attachedRigidbody.isKinematic)
+        if (useUpwardImpulse && attachedRigidbody != null && !attachedRigidbody.isKinematic)
         {
             attachedRigidbody.AddForce(Vector3.up * upwardImpulse, ForceMode.VelocityChange);
+        }
+
+        if (firstPersonController != null)
+        {
+            firstPersonController.AddExternalVelocity(direction.normalized * (distance / duration));
+            return;
         }
 
         knockbackRoutine = StartCoroutine(KnockbackRoutine(direction.normalized));
@@ -92,7 +107,11 @@ public class DamageKnockback : MonoBehaviour
             Vector3 nextOffset = CalculateOffset(direction, progress);
             Vector3 movement = nextOffset - previousOffset;
 
-            if (characterController != null)
+            if (preferRigidbody && attachedRigidbody != null)
+            {
+                attachedRigidbody.MovePosition(attachedRigidbody.position + movement);
+            }
+            else if (characterController != null)
             {
                 characterController.Move(movement);
             }
