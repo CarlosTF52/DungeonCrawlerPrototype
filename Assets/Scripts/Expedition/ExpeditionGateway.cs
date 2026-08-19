@@ -90,7 +90,7 @@ public class ExpeditionGateway : MonoBehaviour
 
         if (action == GatewayAction.Extract && !manager.CanExtract)
         {
-            Debug.LogWarning("Cannot extract until the expedition objective is complete.", this);
+            Debug.LogWarning($"Cannot extract: {manager.ExtractionStatus}.", this);
             return;
         }
 
@@ -122,7 +122,7 @@ public class ExpeditionGateway : MonoBehaviour
 
         if (action == GatewayAction.Extract && !manager.CanExtract && showBlockedExtractionPrompt)
         {
-            return $"Objective: {manager.ObjectiveProgress}/{manager.ObjectivesRequiredToExtract}";
+            return manager.ExtractionStatus;
         }
 
         return promptText;

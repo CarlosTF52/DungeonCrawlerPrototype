@@ -60,3 +60,45 @@ Decision: Add a minimal village inventory or hub progression manager before buil
 
 Reason: Expedition loot currently exists as run-state data. Banking it after extraction is the smallest step that turns successful runs into persistent progress.
 
+## 2026-08-18 - Commit Recovery Files Excluded
+
+Decision: Exclude Unity _Recovery scene files from the cb25e9c Add combat, HUD, and expedition systems commit.
+
+Reason: Recovery files are editor-generated safety artifacts and should only be committed if intentionally restored into real project scenes.
+
+## 2026-08-18 - Village Bank Established
+
+Decision: Keep VillageBank separate from ExpeditionRunManager.
+
+Reason: The run manager owns carried expedition loot, while the village bank owns resources that safely made it home. This separation supports upgrades without confusing temporary run state with persistent hub progress.
+
+## 2026-08-18 - Next Prototype Upgrade
+
+Decision: The next feature after today's commit should be one concrete upgrade purchased from banked expedition loot.
+
+Reason: The prototype has movement, combat, expedition state, extraction, banking, and HUD feedback. A real upgrade closes the motivation loop for repeating expeditions.
+
+## 2026-08-19 - Procedural Route Before Procedural Geometry
+
+Decision: Treat procedural generation as a Darkest Dungeon-style expedition route/room graph first, not full 3D procedural room placement.
+
+Reason: The project needs expedition pacing and replay structure before costly dungeon-generation technology. Hand-authored or reusable room shells keep the prototype playable while the route system evolves.
+
+## 2026-08-19 - Inspector-Authored Routes For Control
+
+Decision: Support inspector-authored expedition routes and use them for near-term prototype testing.
+
+Reason: Authoring the route directly gives better design control while tuning the first playable loop, while the procedural generator remains available as a fallback or later expansion.
+
+## 2026-08-19 - Combat Depth Paused
+
+Decision: Pause deeper combat development for now.
+
+Reason: The current combat foundation is sufficient for expedition testing. Directional/Bannerlord-lite melee, blocking, and enemy attack animations should wait until the core expedition loop proves fun.
+
+## 2026-08-19 - Preserve Configured Run Manager
+
+Decision: ExpeditionRunManager.Instance should search for an existing configured scene manager before creating a blank runtime manager.
+
+Reason: Inspector-authored route data must remain the source of truth. A blank auto-created singleton can erase effective setup by causing the configured manager to destroy itself as a duplicate.
+

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ExpeditionRunManager : MonoBehaviour
@@ -15,6 +16,11 @@ public class ExpeditionRunManager : MonoBehaviour
     [SerializeField] private int objectivesRequiredToExtract = 3;
     [SerializeField] private bool allowEarlyExtraction = true;
     [SerializeField] private bool beginExpeditionOnStartForTesting;
+    [SerializeField] private bool autoExtractWhenPastExtractionRoom = true;
+
+    [Header("Inspector Route")]
+    [SerializeField] private bool useInspectorRoomRoute;
+    [SerializeField] private List<ExpeditionRoomDefinition> inspectorRoomRoute = new List<ExpeditionRoomDefinition>();
 
     public static ExpeditionRunManager Instance
     {
@@ -37,8 +43,31 @@ public class ExpeditionRunManager : MonoBehaviour
     public ExpeditionOutcome LastOutcome { get; private set; }
     public int LastBankedGold { get; private set; }
     public int LastBankedRelics { get; private set; }
+    public ExpeditionRoomGraph RoomGraph { get; private set; }
+    public ExpeditionRoomNode CurrentRoom { get; private set; }
+    public int CurrentObjectivePathIndex { get; private set; }
 
-    public bool CanExtract => IsInExpedition && (allowEarlyExtraction || ObjectiveProgress >= ObjectivesRequiredToExtract);
+    public bool IsInExtractionRoom => CurrentRoom != null && CurrentRoom.HasExtraction;
+    public bool CanExtract => IsInExpedition && IsInExtractionRoom && (allowEarlyExtraction || ObjectiveProgress >= ObjectivesRequiredToExtract);
+    public bool HasGeneratedRoomGraph => RoomGraph != null && RoomGraph.Nodes.Count > 0;
+    public string ObjectivePathLabel => HasGeneratedRoomGraph ? RoomGraph.BuildObjectivePathLabel(CurrentRoom != null ? CurrentRoom.Id : -1) : "No expedition map";
+    public string ExtractionStatus
+    {
+        get
+        {
+            if (!IsInExpedition)
+            {
+                return "No active expedition";
+            }
+
+            if (!IsInExtractionRoom)
+            {
+                return "Find extraction";
+            }
+
+            return CanExtract ? "Ready" : "Objective incomplete";
+        }
+    }
 
     private void Awake()
     {
@@ -60,6 +89,20 @@ public class ExpeditionRunManager : MonoBehaviour
         }
     }
 
+    private void Reset()
+    {
+        if (inspectorRoomRoute.Count > 0)
+        {
+            return;
+        }
+
+        inspectorRoomRoute.Add(new ExpeditionRoomDefinition(ExpeditionRoomType.Entrance, 0, 0, 0, 0));
+        inspectorRoomRoute.Add(new ExpeditionRoomDefinition(ExpeditionRoomType.Combat, 2, 2, 1, 0));
+        inspectorRoomRoute.Add(new ExpeditionRoomDefinition(ExpeditionRoomType.Loot, 1, 1, 2, 1));
+        inspectorRoomRoute.Add(new ExpeditionRoomDefinition(ExpeditionRoomType.Objective, 3, 2, 0, 1, true));
+        inspectorRoomRoute.Add(new ExpeditionRoomDefinition(ExpeditionRoomType.Extraction, 1, 0, 1, 0, false, true));
+    }
+
     public void BeginExpedition()
     {
         BeginExpedition(true);
@@ -76,6 +119,9 @@ public class ExpeditionRunManager : MonoBehaviour
         LastOutcome = ExpeditionOutcome.None;
         LastBankedGold = 0;
         LastBankedRelics = 0;
+        RoomGraph = CreateRoomGraph();
+        CurrentObjectivePathIndex = 0;
+        CurrentRoom = RoomGraph.Entrance;
 
         NotifyStateChanged();
 
@@ -93,7 +139,16 @@ public class ExpeditionRunManager : MonoBehaviour
             return;
         }
 
-        Depth++;
+        if (!AdvanceToNextObjectivePathRoom())
+        {
+            if (autoExtractWhenPastExtractionRoom && CanExtract)
+            {
+                Extract();
+            }
+
+            return;
+        }
+
         NotifyStateChanged();
         LoadConfiguredScene(dungeonSceneName, dungeonSpawnId);
     }
@@ -195,6 +250,9 @@ public class ExpeditionRunManager : MonoBehaviour
     {
         IsInExpedition = false;
         LastOutcome = outcome;
+        RoomGraph = null;
+        CurrentRoom = null;
+        CurrentObjectivePathIndex = 0;
 
         NotifyStateChanged();
         LoadConfiguredScene(hubSceneName, hubSpawnId);
@@ -223,10 +281,58 @@ public class ExpeditionRunManager : MonoBehaviour
         StateChanged?.Invoke();
     }
 
+    private bool AdvanceToNextObjectivePathRoom()
+    {
+        if (!HasGeneratedRoomGraph)
+        {
+            RoomGraph = CreateRoomGraph();
+            CurrentObjectivePathIndex = 0;
+            CurrentRoom = RoomGraph.Entrance;
+        }
+
+        int nextPathIndex = CurrentObjectivePathIndex + 1;
+        ExpeditionRoomNode nextRoom = RoomGraph.GetObjectivePathNodeAt(nextPathIndex);
+
+        if (nextRoom == null)
+        {
+            return false;
+        }
+
+        CurrentObjectivePathIndex = nextPathIndex;
+        CurrentRoom = nextRoom;
+        Depth = CurrentObjectivePathIndex + 1;
+        return true;
+    }
+
+    private ExpeditionRoomGraph CreateRoomGraph()
+    {
+        if (useInspectorRoomRoute)
+        {
+            ExpeditionRoomGraph inspectorGraph = ExpeditionRoomGraph.BuildFromRoute(inspectorRoomRoute);
+
+            if (inspectorGraph.Nodes.Count > 0)
+            {
+                return inspectorGraph;
+            }
+
+            Debug.LogWarning("Inspector room route is enabled, but no valid rooms are configured. Falling back to generated route.", this);
+        }
+
+        return ExpeditionRoomGraph.Generate(RunNumber, ObjectivesRequiredToExtract);
+    }
+
     private static void EnsureInstanceExists()
     {
         if (instance != null)
         {
+            return;
+        }
+
+        ExpeditionRunManager sceneManager = FindObjectOfType<ExpeditionRunManager>();
+
+        if (sceneManager != null)
+        {
+            instance = sceneManager;
             return;
         }
 

@@ -10,6 +10,7 @@ public class DoorSceneTransition : MonoBehaviour
     [SerializeField] private string targetSpawnId = "Default";
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private string promptText = "Press E to enter";
+    [SerializeField] private bool advanceExpeditionRoomIfActive = true;
 
 #if ENABLE_INPUT_SYSTEM
     [SerializeField] private Key interactionKey = Key.E;
@@ -70,6 +71,15 @@ public class DoorSceneTransition : MonoBehaviour
 
     private void TryEnterDoor()
     {
+        ExpeditionRunManager expeditionRunManager = ExpeditionRunManager.Instance;
+
+        if (advanceExpeditionRoomIfActive && expeditionRunManager.IsInExpedition)
+        {
+            isLoading = true;
+            expeditionRunManager.DescendToNextDepth();
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(targetSceneName))
         {
             Debug.LogWarning("Door has no target scene assigned.", this);

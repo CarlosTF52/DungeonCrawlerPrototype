@@ -16,7 +16,7 @@ Done when:
 
 ## Milestone 1 - One Good Run
 
-Status: Active.
+Status: Active, close to first end-to-end proof.
 
 Goal: Prove the core loop with placeholder-quality content.
 
@@ -24,18 +24,20 @@ Done when:
 
 - Player starts in the village hub. In progress.
 - Player can enter one dungeon. Working through `ExpeditionGateway`.
+- Player can advance through a small expedition route. Working through procedural/inspector-authored room route.
 - Player can explore a small dungeon route. In progress.
 - Player can fight at least one enemy. Working.
 - Player can collect loot or a key item. Working during an active expedition.
 - Player can return to the village. Working through extraction flow.
-- Player can buy or trigger one upgrade. Not started.
+- Extracted loot becomes persistent village progress. Working through `VillageBank`.
+- Player can buy or trigger one upgrade. Debug spend exists; real upgrade not started.
 - The loop can be repeated once. Not proven yet.
 
 Current Milestone 1 focus:
 
-- Bank extracted loot into a persistent village/hub inventory.
-- Show a simple hub-side result after extraction.
-- Keep the run loop small enough to test repeatedly.
+- Playtest one full authored route from hub to dungeon and back.
+- Replace debug spend with one real upgrade effect.
+- Show banked loot clearly in the hub.
 
 ## Milestone 2 - Tension Pass
 
@@ -50,6 +52,7 @@ Done when:
 - Resource scarcity affects decisions.
 - At least one enemy is scary enough to avoid sometimes.
 - Player death or failure has clear consequences.
+- The expedition route creates a pressure curve instead of a flat sequence of rooms.
 
 ## Milestone 3 - Hub Meaning
 
