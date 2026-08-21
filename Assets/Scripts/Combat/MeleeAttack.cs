@@ -17,6 +17,7 @@ public class MeleeAttack : MonoBehaviour
     [SerializeField] private Transform attackOrigin;
     [SerializeField] private bool useInput = true;
     [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
+    [SerializeField] private bool playTargetKnockback = true;
 
 #if ENABLE_INPUT_SYSTEM
     [SerializeField] private Key attackKey = Key.Space;
@@ -29,6 +30,7 @@ public class MeleeAttack : MonoBehaviour
     private float nextAttackTime;
     private readonly Collider[] hits = new Collider[16];
     private readonly HashSet<Damageable> damagedTargets = new HashSet<Damageable>();
+    private EntityStatsProvider statsProvider;
 
     private void Reset()
     {
@@ -38,6 +40,19 @@ public class MeleeAttack : MonoBehaviour
     private void Awake()
     {
         ResolveStats();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStatsProvider();
+    }
+
+    private void OnDisable()
+    {
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= SetStats;
+        }
     }
 
     private void OnValidate()
@@ -66,6 +81,11 @@ public class MeleeAttack : MonoBehaviour
     }
 #endif
 
+    public void SetStats(EntityStats newStats)
+    {
+        stats = newStats;
+    }
+
     public bool TryAttack()
     {
         if (Time.time < nextAttackTime)
@@ -91,7 +111,10 @@ public class MeleeAttack : MonoBehaviour
 
             if (damageable != null && damagedTargets.Add(damageable))
             {
-                damageable.TryTakeDamage(GetDamage(), attackerTeam, gameObject);
+                if (damageable.TryTakeDamage(GetDamage(), attackerTeam, gameObject))
+                {
+                    TryPlayTargetKnockback(damageable);
+                }
             }
         }
     }
@@ -120,6 +143,21 @@ public class MeleeAttack : MonoBehaviour
         return false;
     }
 
+    private void TryPlayTargetKnockback(Damageable target)
+    {
+        if (!playTargetKnockback || target == null)
+        {
+            return;
+        }
+
+        DamageKnockback knockback = target.GetComponentInParent<DamageKnockback>();
+
+        if (knockback != null)
+        {
+            knockback.PlayKnockback();
+        }
+    }
+
     private void OnDrawGizmosSelected()
     {
         Transform origin = attackOrigin != null ? attackOrigin : transform;
@@ -134,11 +172,22 @@ public class MeleeAttack : MonoBehaviour
             return;
         }
 
-        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
 
-        if (provider != null)
+        if (statsProvider != null)
         {
-            stats = provider.Stats;
+            stats = statsProvider.Stats;
+        }
+    }
+
+    private void SubscribeToStatsProvider()
+    {
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
+
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= SetStats;
+            statsProvider.StatsChanged += SetStats;
         }
     }
 }

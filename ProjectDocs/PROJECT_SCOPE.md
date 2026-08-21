@@ -33,8 +33,9 @@ For the first prototype, prioritize expedition pressure before deep roster manag
 5. Fight or avoid dangerous enemies.
 6. Find loot, a relic, or one survivor.
 7. Return to the village.
-8. Spend loot on one meaningful upgrade.
-9. Repeat with slightly higher danger.
+8. Decide what to deposit in the physical village bank and what to carry for dungeon merchants.
+9. Spend banked loot on one meaningful upgrade.
+10. Repeat with slightly higher danger.
 
 ## Initial Pillars
 
@@ -76,5 +77,11 @@ For the first prototype, prioritize expedition pressure before deep roster manag
 Default recommendation: third-person.
 
 Reason: third-person better showcases models, animations, armor, enemy silhouettes, and deliberate melee combat. First-person can be revisited if horror immersion becomes more important than animation readability.
+## Multiplayer Direction
 
+Possible 2-player co-op is an architectural consideration, not an active Milestone 1 feature.
+
+Near-term systems should avoid hard-coding assumptions that make co-op expensive later, such as assuming there is only one player, one target, one inventory owner, or one body that can trigger expedition flow.
+
+Networking, lobbies, replication, host/client authority, matchmaking, and full co-op gameplay are out of scope until the single-player expedition loop is fun.
 

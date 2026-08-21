@@ -20,10 +20,25 @@ public class StaminaPool : MonoBehaviour
     public float AttackStaminaCost => stats != null ? stats.AttackStaminaCost : attackStaminaCost;
     public bool HasStamina => CurrentStamina > 0f;
 
+    private EntityStatsProvider statsProvider;
+
     private void Awake()
     {
         ResolveStats();
         CurrentStamina = MaxStamina;
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStatsProvider();
+    }
+
+    private void OnDisable()
+    {
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= HandleProviderStatsChanged;
+        }
     }
 
     private void OnValidate()
@@ -40,6 +55,20 @@ public class StaminaPool : MonoBehaviour
         {
             Restore(StaminaRegenPerSecond * Time.deltaTime);
         }
+    }
+
+    public void SetStats(EntityStats newStats, bool restoreToFullStamina)
+    {
+        stats = newStats;
+
+        if (restoreToFullStamina)
+        {
+            RestoreToFull();
+            return;
+        }
+
+        CurrentStamina = Mathf.Clamp(CurrentStamina, 0f, MaxStamina);
+        staminaChanged?.Invoke(CurrentStamina, MaxStamina);
     }
 
     public bool TrySpend(float amount)
@@ -98,12 +127,28 @@ public class StaminaPool : MonoBehaviour
             return;
         }
 
-        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
 
-        if (provider != null)
+        if (statsProvider != null)
         {
-            stats = provider.Stats;
+            stats = statsProvider.Stats;
         }
+    }
+
+    private void SubscribeToStatsProvider()
+    {
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
+
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= HandleProviderStatsChanged;
+            statsProvider.StatsChanged += HandleProviderStatsChanged;
+        }
+    }
+
+    private void HandleProviderStatsChanged(EntityStats newStats)
+    {
+        SetStats(newStats, false);
     }
 }
 

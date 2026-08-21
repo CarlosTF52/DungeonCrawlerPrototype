@@ -5,7 +5,7 @@ public class VillageBank : MonoBehaviour
 {
     private static VillageBank instance;
 
-    [Header("Starting Resources")]
+    [Header("Starting Stored Resources")]
     [SerializeField] private int startingGold;
     [SerializeField] private int startingRelics;
 
@@ -22,6 +22,7 @@ public class VillageBank : MonoBehaviour
 
     public int Gold { get; private set; }
     public int Relics { get; private set; }
+    public bool HasAnyCurrency => Gold > 0 || Relics > 0;
 
     private void Awake()
     {
@@ -65,6 +66,85 @@ public class VillageBank : MonoBehaviour
         }
     }
 
+    public bool TryDepositFromPouch(int gold, int relics)
+    {
+        gold = Mathf.Max(0, gold);
+        relics = Mathf.Max(0, relics);
+
+        if (gold <= 0 && relics <= 0)
+        {
+            return false;
+        }
+
+        PlayerCurrencyPouch pouch = PlayerCurrencyPouch.Instance;
+
+        if (!pouch.TrySpend(gold, relics))
+        {
+            return false;
+        }
+
+        Deposit(gold, relics);
+        return true;
+    }
+
+    public bool TryDepositAllFromPouch()
+    {
+        PlayerCurrencyPouch pouch = PlayerCurrencyPouch.Instance;
+        int gold = pouch.Gold;
+        int relics = pouch.Relics;
+
+        if (gold <= 0 && relics <= 0)
+        {
+            return false;
+        }
+
+        if (!pouch.TrySpend(gold, relics))
+        {
+            return false;
+        }
+
+        Deposit(gold, relics);
+        return true;
+    }
+
+    public bool TryWithdrawToPouch(int gold, int relics)
+    {
+        gold = Mathf.Max(0, gold);
+        relics = Mathf.Max(0, relics);
+
+        if (gold <= 0 && relics <= 0)
+        {
+            return false;
+        }
+
+        if (!TrySpend(gold, relics))
+        {
+            return false;
+        }
+
+        PlayerCurrencyPouch.Instance.Add(gold, relics);
+        return true;
+    }
+
+    public bool TryWithdrawAllToPouch()
+    {
+        if (!HasAnyCurrency)
+        {
+            return false;
+        }
+
+        int gold = Gold;
+        int relics = Relics;
+
+        if (!TrySpend(gold, relics))
+        {
+            return false;
+        }
+
+        PlayerCurrencyPouch.Instance.Add(gold, relics);
+        return true;
+    }
+
     public bool CanAfford(int goldCost, int relicCost)
     {
         return Gold >= Mathf.Max(0, goldCost) && Relics >= Mathf.Max(0, relicCost);
@@ -93,7 +173,17 @@ public class VillageBank : MonoBehaviour
             return;
         }
 
+        VillageBank sceneBank = FindObjectOfType<VillageBank>();
+
+        if (sceneBank != null)
+        {
+            instance = sceneBank;
+            return;
+        }
+
         GameObject bankObject = new GameObject("VillageBank");
         bankObject.AddComponent<VillageBank>();
     }
 }
+
+

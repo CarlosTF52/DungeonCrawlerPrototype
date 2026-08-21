@@ -9,9 +9,11 @@ public class PlayerWeaponHitbox : MonoBehaviour
     [SerializeField] private Collider hitboxCollider;
     [SerializeField] private LayerMask targetLayers = ~0;
     [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
+    [SerializeField] private bool playTargetKnockback = true;
 
     private readonly HashSet<Damageable> damagedTargets = new HashSet<Damageable>();
     private bool isActive;
+    private EntityStatsProvider statsProvider;
 
     private void Awake()
     {
@@ -23,6 +25,11 @@ public class PlayerWeaponHitbox : MonoBehaviour
         }
 
         SetColliderEnabled(false);
+    }
+
+    private void OnEnable()
+    {
+        SubscribeToStatsProvider();
     }
 
     private void Reset()
@@ -37,6 +44,11 @@ public class PlayerWeaponHitbox : MonoBehaviour
 
     private void OnDisable()
     {
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= SetStats;
+        }
+
         isActive = false;
         SetColliderEnabled(false);
     }
@@ -54,6 +66,11 @@ public class PlayerWeaponHitbox : MonoBehaviour
         {
             hitboxCollider.isTrigger = true;
         }
+    }
+
+    public void SetStats(EntityStats newStats)
+    {
+        stats = newStats;
     }
 
     public void BeginHitWindow()
@@ -90,7 +107,10 @@ public class PlayerWeaponHitbox : MonoBehaviour
 
         if (damageable != null && damagedTargets.Add(damageable))
         {
-            damageable.TryTakeDamage(GetDamage(), attackerTeam, gameObject);
+            if (damageable.TryTakeDamage(GetDamage(), attackerTeam, gameObject))
+            {
+                TryPlayTargetKnockback(damageable);
+            }
         }
     }
 
@@ -127,6 +147,21 @@ public class PlayerWeaponHitbox : MonoBehaviour
         }
     }
 
+    private void TryPlayTargetKnockback(Damageable target)
+    {
+        if (!playTargetKnockback || target == null)
+        {
+            return;
+        }
+
+        DamageKnockback knockback = target.GetComponentInParent<DamageKnockback>();
+
+        if (knockback != null)
+        {
+            knockback.PlayKnockback();
+        }
+    }
+
     private void ResolveStats()
     {
         if (stats != null)
@@ -134,11 +169,22 @@ public class PlayerWeaponHitbox : MonoBehaviour
             return;
         }
 
-        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
 
-        if (provider != null)
+        if (statsProvider != null)
         {
-            stats = provider.Stats;
+            stats = statsProvider.Stats;
+        }
+    }
+
+    private void SubscribeToStatsProvider()
+    {
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
+
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= SetStats;
+            statsProvider.StatsChanged += SetStats;
         }
     }
 }

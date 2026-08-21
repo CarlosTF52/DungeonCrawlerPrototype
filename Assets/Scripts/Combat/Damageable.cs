@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System;
 
 public class Damageable : MonoBehaviour
 {
@@ -21,7 +22,11 @@ public class Damageable : MonoBehaviour
     public GameObject LastDamageSource { get; private set; }
     public bool IsInvincible => Time.time < invincibleUntilTime;
 
+    public event Action Damaged;
+    public event Action Died;
+
     private float invincibleUntilTime;
+    private EntityStatsProvider statsProvider;
 
     private void Awake()
     {
@@ -29,10 +34,37 @@ public class Damageable : MonoBehaviour
         CurrentHealth = MaxHealth;
     }
 
+    private void OnEnable()
+    {
+        SubscribeToStatsProvider();
+    }
+
+    private void OnDisable()
+    {
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= HandleProviderStatsChanged;
+        }
+    }
+
     private void OnValidate()
     {
         maxHealth = Mathf.Max(1, maxHealth);
         invincibilityDuration = Mathf.Max(0f, invincibilityDuration);
+    }
+
+    public void SetStats(EntityStats newStats, bool restoreToFullHealth)
+    {
+        stats = newStats;
+
+        if (restoreToFullHealth)
+        {
+            RestoreToFullHealth();
+            return;
+        }
+
+        CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
+        healthChanged?.Invoke(CurrentHealth, MaxHealth);
     }
 
     public void RestoreToFullHealth()
@@ -56,6 +88,7 @@ public class Damageable : MonoBehaviour
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
         LastDamageSource = source;
         invincibleUntilTime = Time.time + GetInvincibilityDuration();
+        Damaged?.Invoke();
         damaged?.Invoke();
         healthChanged?.Invoke(CurrentHealth, MaxHealth);
 
@@ -80,6 +113,7 @@ public class Damageable : MonoBehaviour
 
     private void Die(GameObject source)
     {
+        Died?.Invoke();
         died?.Invoke();
 
         if (destroyOnDeath)
@@ -100,12 +134,28 @@ public class Damageable : MonoBehaviour
             return;
         }
 
-        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
 
-        if (provider != null)
+        if (statsProvider != null)
         {
-            stats = provider.Stats;
+            stats = statsProvider.Stats;
         }
+    }
+
+    private void SubscribeToStatsProvider()
+    {
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
+
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= HandleProviderStatsChanged;
+            statsProvider.StatsChanged += HandleProviderStatsChanged;
+        }
+    }
+
+    private void HandleProviderStatsChanged(EntityStats newStats)
+    {
+        SetStats(newStats, false);
     }
 }
 

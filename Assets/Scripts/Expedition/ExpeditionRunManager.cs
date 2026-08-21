@@ -41,8 +41,8 @@ public class ExpeditionRunManager : MonoBehaviour
     public int ObjectiveProgress { get; private set; }
     public int ObjectivesRequiredToExtract => Mathf.Max(1, objectivesRequiredToExtract);
     public ExpeditionOutcome LastOutcome { get; private set; }
-    public int LastBankedGold { get; private set; }
-    public int LastBankedRelics { get; private set; }
+    public int LastExtractedGold { get; private set; }
+    public int LastExtractedRelics { get; private set; }
     public ExpeditionRoomGraph RoomGraph { get; private set; }
     public ExpeditionRoomNode CurrentRoom { get; private set; }
     public int CurrentObjectivePathIndex { get; private set; }
@@ -117,8 +117,8 @@ public class ExpeditionRunManager : MonoBehaviour
         RelicsCollected = 0;
         ObjectiveProgress = 0;
         LastOutcome = ExpeditionOutcome.None;
-        LastBankedGold = 0;
-        LastBankedRelics = 0;
+        LastExtractedGold = 0;
+        LastExtractedRelics = 0;
         RoomGraph = CreateRoomGraph();
         CurrentObjectivePathIndex = 0;
         CurrentRoom = RoomGraph.Entrance;
@@ -166,7 +166,7 @@ public class ExpeditionRunManager : MonoBehaviour
             return;
         }
 
-        BankCollectedLoot();
+        MoveCollectedLootToPouch();
         EndExpedition(ExpeditionOutcome.Extracted);
     }
 
@@ -258,11 +258,11 @@ public class ExpeditionRunManager : MonoBehaviour
         LoadConfiguredScene(hubSceneName, hubSpawnId);
     }
 
-    private void BankCollectedLoot()
+    private void MoveCollectedLootToPouch()
     {
-        LastBankedGold = GoldCollected;
-        LastBankedRelics = RelicsCollected;
-        VillageBank.Instance.Deposit(LastBankedGold, LastBankedRelics);
+        LastExtractedGold = GoldCollected;
+        LastExtractedRelics = RelicsCollected;
+        PlayerCurrencyPouch.Instance.Add(LastExtractedGold, LastExtractedRelics);
     }
 
     private void LoadConfiguredScene(string sceneName, string spawnId)

@@ -101,4 +101,45 @@ Reason: The current combat foundation is sufficient for expedition testing. Dire
 Decision: ExpeditionRunManager.Instance should search for an existing configured scene manager before creating a blank runtime manager.
 
 Reason: Inspector-authored route data must remain the source of truth. A blank auto-created singleton can erase effective setup by causing the configured manager to destroy itself as a duplicate.
+## 2026-08-20 - Multiplayer-Aware Architecture
+
+Decision: Treat possible 2-player co-op as an architectural consideration now, but defer actual multiplayer implementation.
+
+Reason: Multiplayer would touch player spawning, scene transitions, expedition state, combat authority, enemy targeting, loot, death/failure, and hub progression. Planning for those seams now is cheap, while implementing networking before the single-player loop is fun would slow the prototype.
+
+## 2026-08-20 - Ignore Unity Recovery Folder
+
+Decision: Ignore Assets/_Recovery/ in git moving forward.
+
+Reason: Unity auto-generates recovery scene files when the project opens. They are editor safety artifacts and create noisy untracked changes unless intentionally restored into real scenes.
+
+## 2026-08-20 - Physical Bank And Carried Currency
+
+Decision: Treat the bank as a physical village location. Successful extraction moves run loot into carried player currency, and the player must interact with the bank to deposit money into safe storage or withdraw money for dungeon use.
+
+Reason: This creates a preparation choice before expeditions: keep money safe in the village, or carry money into the dungeon so merchants and future risk/reward systems can use it.
+
+## 2026-08-20 - Roster Before Upgrade Depth
+
+Decision: Add character roster and tavern selection before building deeper upgrade systems.
+
+Reason: If stress, injuries, or recovery become part of the loop, the player needs multiple usable characters and a reason to swap between them. Character-specific stats and skills should be part of the village preparation layer.
+
+## 2026-08-21 - Carried Money Before Safe Banking
+
+Decision: Successful extraction should move run loot into the player currency pouch, while safe banking requires physical village bank interaction.
+
+Reason: This creates a real risk/reward choice before expeditions and prepares the design for dungeon merchants that spend carried money.
+
+## 2026-08-21 - Tavern Roster Before Deeper Upgrades
+
+Decision: Add character roster selection before building deeper upgrade systems.
+
+Reason: Character choice gives the village a clearer purpose and creates a foundation for future stress, injury, role, and skill systems.
+
+## 2026-08-21 - First Enemy Archetype Is Slime Launcher
+
+Decision: Use a physics-based slime lunge enemy as the first enemy-specific archetype.
+
+Reason: The slime is readable, quick to prototype, and establishes reusable enemy patterns: ScriptableObject attack profiles, telegraphed windup, active damage window, interruptibility, recovery, and visual-only deformation.
 

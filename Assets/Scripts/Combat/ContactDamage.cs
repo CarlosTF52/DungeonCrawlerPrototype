@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class ContactDamage : MonoBehaviour
@@ -15,6 +16,9 @@ public class ContactDamage : MonoBehaviour
 
     private readonly Dictionary<Damageable, float> nextHitTimes = new Dictionary<Damageable, float>();
     private SimpleEnemyChase enemyChase;
+    private EntityStatsProvider statsProvider;
+
+    public event Action<Damageable> DamageDealt;
 
     private void Awake()
     {
@@ -27,11 +31,29 @@ public class ContactDamage : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        SubscribeToStatsProvider();
+    }
+
+    private void OnDisable()
+    {
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= SetStats;
+        }
+    }
+
     private void OnValidate()
     {
         damage = Mathf.Max(1, damage);
         hitCooldown = Mathf.Max(0f, hitCooldown);
         attackerPauseDuration = Mathf.Max(0f, attackerPauseDuration);
+    }
+
+    public void SetStats(EntityStats newStats)
+    {
+        stats = newStats;
     }
 
     private void OnTriggerStay(Collider other)
@@ -59,6 +81,7 @@ public class ContactDamage : MonoBehaviour
         }
 
         nextHitTimes[target] = Time.time + GetHitCooldown();
+        DamageDealt?.Invoke(target);
 
         if (playTargetKnockback)
         {
@@ -103,11 +126,22 @@ public class ContactDamage : MonoBehaviour
             return;
         }
 
-        EntityStatsProvider provider = GetComponentInParent<EntityStatsProvider>();
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
 
-        if (provider != null)
+        if (statsProvider != null)
         {
-            stats = provider.Stats;
+            stats = statsProvider.Stats;
+        }
+    }
+
+    private void SubscribeToStatsProvider()
+    {
+        statsProvider = GetComponentInParent<EntityStatsProvider>();
+
+        if (statsProvider != null)
+        {
+            statsProvider.StatsChanged -= SetStats;
+            statsProvider.StatsChanged += SetStats;
         }
     }
 }

@@ -6,10 +6,11 @@ public class CurrencyHud : MonoBehaviour
     private enum CurrencySource
     {
         CurrentExpedition,
+        PlayerPouch,
         VillageBank
     }
 
-    [SerializeField] private CurrencySource source = CurrencySource.CurrentExpedition;
+    [SerializeField] private CurrencySource source = CurrencySource.PlayerPouch;
     [SerializeField] private TMP_Text goldText;
     [SerializeField] private TMP_Text relicsText;
     [SerializeField] private GameObject contentRoot;
@@ -18,14 +19,20 @@ public class CurrencyHud : MonoBehaviour
     [SerializeField] private bool hideWhenNoExpedition;
 
     private ExpeditionRunManager expeditionRunManager;
+    private PlayerCurrencyPouch playerCurrencyPouch;
     private VillageBank villageBank;
+    private int displayedGold = int.MinValue;
+    private int displayedRelics = int.MinValue;
+    private bool displayedVisibility = true;
 
     private void OnEnable()
     {
         expeditionRunManager = ExpeditionRunManager.Instance;
+        playerCurrencyPouch = PlayerCurrencyPouch.Instance;
         villageBank = VillageBank.Instance;
 
         expeditionRunManager.StateChanged += Refresh;
+        playerCurrencyPouch.BalanceChanged += Refresh;
         villageBank.BalanceChanged += Refresh;
 
         Refresh();
@@ -38,32 +45,34 @@ public class CurrencyHud : MonoBehaviour
             expeditionRunManager.StateChanged -= Refresh;
         }
 
+        if (playerCurrencyPouch != null)
+        {
+            playerCurrencyPouch.BalanceChanged -= Refresh;
+        }
+
         if (villageBank != null)
         {
             villageBank.BalanceChanged -= Refresh;
         }
     }
 
+    private void LateUpdate()
+    {
+        Refresh();
+    }
+
     public void Refresh()
     {
-        int gold = 0;
-        int relics = 0;
-        bool shouldShow = true;
+        GetCurrentValues(out int gold, out int relics, out bool shouldShow);
 
-        if (source == CurrencySource.CurrentExpedition)
+        if (gold == displayedGold && relics == displayedRelics && shouldShow == displayedVisibility)
         {
-            if (expeditionRunManager != null)
-            {
-                gold = expeditionRunManager.GoldCollected;
-                relics = expeditionRunManager.RelicsCollected;
-                shouldShow = !hideWhenNoExpedition || expeditionRunManager.IsInExpedition;
-            }
+            return;
         }
-        else if (villageBank != null)
-        {
-            gold = villageBank.Gold;
-            relics = villageBank.Relics;
-        }
+
+        displayedGold = gold;
+        displayedRelics = relics;
+        displayedVisibility = shouldShow;
 
         if (goldText != null)
         {
@@ -78,6 +87,39 @@ public class CurrencyHud : MonoBehaviour
         if (contentRoot != null)
         {
             contentRoot.SetActive(shouldShow);
+        }
+    }
+
+    private void GetCurrentValues(out int gold, out int relics, out bool shouldShow)
+    {
+        gold = 0;
+        relics = 0;
+        shouldShow = true;
+
+        switch (source)
+        {
+            case CurrencySource.CurrentExpedition:
+                if (expeditionRunManager != null)
+                {
+                    gold = expeditionRunManager.GoldCollected;
+                    relics = expeditionRunManager.RelicsCollected;
+                    shouldShow = !hideWhenNoExpedition || expeditionRunManager.IsInExpedition;
+                }
+                break;
+            case CurrencySource.PlayerPouch:
+                if (playerCurrencyPouch != null)
+                {
+                    gold = playerCurrencyPouch.Gold;
+                    relics = playerCurrencyPouch.Relics;
+                }
+                break;
+            case CurrencySource.VillageBank:
+                if (villageBank != null)
+                {
+                    gold = villageBank.Gold;
+                    relics = villageBank.Relics;
+                }
+                break;
         }
     }
 }

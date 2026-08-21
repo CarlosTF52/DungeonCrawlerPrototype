@@ -49,6 +49,7 @@ Delivered:
 - Stamina and basic player stats support.
 - Health/stamina HUD bars through `PlayerVitalsHud`.
 - Currency HUD through TextMeshPro via `CurrencyHud`.
+- Runtime stat refresh support for character roster swaps.
 
 Future combat ideas:
 
@@ -75,13 +76,17 @@ Delivered:
 - `VillageBank`.
 - `VillageBankDebugHud`.
 - `VillageBankDebugSpend`.
+- `PlayerCurrencyPouch`.
+- `VillageBankInteractable`.
+- `DungeonMerchantDebugPurchase`.
 - Debug/testing support for starting an expedition directly in a dungeon scene.
-- Successful extraction deposits carried gold/relics into the village bank.
+- Successful extraction moves carried run loot into the player pouch; physical bank interaction secures or withdraws resources.
 
 Current rule:
 
 - Hub entrance and dungeon extraction points should use `ExpeditionGateway`.
 - Plain door/scene transition scripts do not start an expedition and should not be used for expedition-state interactions.
+- Village bank is safe storage; player pouch is money carried into risk and future merchant interactions.
 
 Next step:
 
@@ -112,3 +117,50 @@ Current model:
 Next step:
 
 - Use the inspector-authored route to build and test one satisfying five-room expedition before adding more procedural complexity.
+
+## Village Systems
+
+Task: `Village Systems - Bank, Upgrades, Tavern`
+
+Status: Active foundation working.
+
+Delivered:
+
+- Physical bank flow: extracted loot enters the player pouch, not the safe bank automatically.
+- Deposit/withdraw bank interactions.
+- Player carried pouch for future dungeon merchants.
+- Currency HUD hardening for current expedition, player pouch, and village bank sources.
+- Character roster foundation with `CharacterDefinition`, `CharacterRosterManager`, `PlayerCharacterApplier`, `TavernCharacterSelector`, and roster HUD/debug display.
+- Starter characters: Warden, Scout, Occultist.
+- Stress/injury placeholder fields on character definitions.
+
+Next step:
+
+- Build one real upgrade station/effect after proving the character/pouch/expedition loop.
+
+## Enemies
+
+Task: `Enemies - Dungeon Crawler Prototype`
+
+Status: First archetype working.
+
+Delivered:
+
+- `EnemyLaunchAttackProfile` ScriptableObject for reusable launch attack tuning.
+- `SlimeLaunchEnemy` physics-based slime lunge controller.
+- Slime launch damage window using existing `ContactDamage` hitbox.
+- Damageable C# events used for enemy interruption/death handling.
+- Player weapon and fallback melee can trigger target knockback.
+- Slime launch can cancel when damaged.
+- Slime visual deformation for idle wobble, windup squash, launch stretch, damage pulse, and death squish.
+- Launch ends when damage is dealt to avoid extreme player shove at edge cases.
+
+Current rule:
+
+- Enemy gameplay root/colliders should stay stable.
+- Deform only a visual child mesh/root.
+- Use ScriptableObject profiles where possible so future enemies reuse attack tuning patterns.
+
+Next step:
+
+- Tune slime timing and collision layers inside a full expedition route.

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21916de6506431a97194908b6378963, type: 3}
+  m_Name: Scout
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterDefinition
+  characterId: scout
+  displayName: Scout
+  roleName: Skirmisher
+  description: Fast explorer with strong stamina but lower health.
+  stats: {fileID: 11400000, guid: 7a8a1b39b3794bee9694b88e2df0f525, type: 2}
+  skillNames:
+  - Quick Cut
+  - Slip Away
+  startingStress: 8
+  startingInjurySeverity: 0
