@@ -115,7 +115,7 @@ Reason: Unity auto-generates recovery scene files when the project opens. They a
 
 ## 2026-08-20 - Physical Bank And Carried Currency
 
-Decision: Treat the bank as a physical village location. Successful extraction moves run loot into carried player currency, and the player must interact with the bank to deposit money into safe storage or withdraw money for dungeon use.
+Decision: Treat the bank as a physical village location. Dungeon pickups update carried player currency immediately, and the player must interact with the bank to deposit money into safe storage or withdraw money for dungeon use.
 
 Reason: This creates a preparation choice before expeditions: keep money safe in the village, or carry money into the dungeon so merchants and future risk/reward systems can use it.
 
@@ -127,9 +127,9 @@ Reason: If stress, injuries, or recovery become part of the loop, the player nee
 
 ## 2026-08-21 - Carried Money Before Safe Banking
 
-Decision: Successful extraction should move run loot into the player currency pouch, while safe banking requires physical village bank interaction.
+Decision: Dungeon loot pickups should update the player currency pouch immediately, while safe banking requires physical village bank interaction.
 
-Reason: This creates a real risk/reward choice before expeditions and prepares the design for dungeon merchants that spend carried money.
+Reason: The pouch represents current player money and should be usable by dungeon merchants as soon as loot is picked up. Extraction still matters for ending the run cleanly, while the village bank remains safe storage.
 
 ## 2026-08-21 - Tavern Roster Before Deeper Upgrades
 
@@ -143,3 +143,70 @@ Decision: Use a physics-based slime lunge enemy as the first enemy-specific arch
 
 Reason: The slime is readable, quick to prototype, and establishes reusable enemy patterns: ScriptableObject attack profiles, telegraphed windup, active damage window, interruptibility, recovery, and visual-only deformation.
 
+
+
+## 2026-08-21 - Modular Upgrade Definitions
+
+Decision: Build village upgrades around reusable `UpgradeDefinition` assets and a persistent `VillageUpgradeManager`, with the blacksmith weapon damage upgrade as the first concrete station.
+
+Reason: Weapon damage proves the expedition-to-village progression loop now, while the asset-driven structure keeps armor, stamina, recovery, stress, and future upgrades from becoming separate one-off systems.
+
+## 2026-08-21 - Character-Owned Upgrades
+
+Decision: Upgrade levels belong to individual characters, not the whole village roster.
+
+Reason: If characters can die, retire, suffer injuries, or become unavailable, their personal investment should matter. Losing a veteran should hurt more than losing an interchangeable stat loadout.
+
+## 2026-08-21 - Tavern Resting Recovery
+
+Decision: Current health belongs to the character roster entry, not the transient player object. Swapping characters preserves missing health, and successful extraction heals resting non-runner characters only partially.
+
+Reason: Character damage should create roster pressure. Partial recovery makes swapping valuable without erasing the consequences of a dangerous run, and tavern upgrades can later increase the recovery amount.
+
+## 2026-08-21 - Upgrade Ownership Scope
+
+Decision: Upgrade definitions now declare whether they belong to the active character or the village.
+
+Reason: Personal upgrades should make character loss painful, while building upgrades like tavern recovery should improve shared village services. Keeping both under the same definition and purchase system avoids one-off upgrade code.
+
+## 2026-08-21 - Better Beds Tavern Upgrade
+
+Decision: The first tavern upgrade increases resting health recovery for non-running characters after successful extraction.
+
+Reason: The tavern now has a direct progression role: investing banked resources makes roster rotation more forgiving without fully removing wound pressure.
+
+## 2026-08-21 - Characters Are Citizens
+
+Decision: Characters are not fixed classes. The roster should treat them as named people with runtime identity, random stat variation, age, status, injuries, stress placeholders, equipment/progression, and eventual village jobs.
+
+Reason: Character loss should hurt on more than one axis. A veteran can be valuable in expeditions and later as a village worker, which makes risking them a strategic choice rather than a simple class/stat replacement.
+
+## 2026-08-21 - Death Is Cursed Aging
+
+Decision: First-pass defeat ages the active character by `10 + overkill damage`, adds injury severity, removes carried pouch resources, and marks the character fallen unless they reach age 100 and die permanently.
+
+Reason: This gives the project a distinct identity: characters do not age through time, they age by surviving death. Overkill damage now matters, old characters become physically weaker but more stress tolerant, and defeat creates roster pressure without immediately deleting every fallen hero.
+
+## 2026-08-21 - Resurrection Ward Status Viewer
+
+Decision: Add a physical Resurrection Ward trigger that displays recoverable fallen characters and cycles through them with the interact key.
+
+Reason: Fallen characters should stay visible as recoverable roster consequences, even when they cannot be selected at the tavern. The ward gives the village a dedicated place to inspect recovery timers, age, and injuries, while permanent deaths belong in the Cemetery.
+
+## 2026-08-21 - Cemetery For Permanent Death
+
+Decision: Add a physical Cemetery trigger that displays only permanently dead characters and cycles through their memorial records with the interact key.
+
+Reason: The Resurrection Ward is for unavailable roster status, while the Cemetery gives irreversible character loss its own village location. Permanent death should be visible as a consequence, not hidden because the character can no longer be selected.
+
+## 2026-08-21 - Player UI Ownership
+
+Decision: Keep player-state indicators on the persistent player canvas, while village/location panels belong to the Hub Canvas.
+
+Reason: Player vitals, carried currency, active character identity, expedition status, damage feedback, and future stress overlays should survive scene travel with the player. Tavern roster, bank, blacksmith, resurrection ward, cemetery, and village management panels should reload with the Hub scene so they do not keep stale scene references after expeditions.
+
+## 2026-08-21 - Stress Bar Foundation
+
+Decision: Store stress on roster character runtime state and expose it through the player vitals UI as a sanity/stress bar before adding drain sources.
+
+Reason: Stress needs to belong to the character, not the transient player object, so future dungeon darkness, damage, room depth, and horror events can affect the active survivor and persist across scene travel.

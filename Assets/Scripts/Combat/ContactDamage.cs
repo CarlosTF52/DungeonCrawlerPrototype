@@ -56,6 +56,11 @@ public class ContactDamage : MonoBehaviour
         stats = newStats;
     }
 
+    public void SetPlayTargetKnockback(bool shouldPlayKnockback)
+    {
+        playTargetKnockback = shouldPlayKnockback;
+    }
+
     private void OnTriggerStay(Collider other)
     {
         if (ignoreTriggerColliders && other.isTrigger)

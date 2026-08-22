@@ -7,6 +7,8 @@ public class CharacterDefinition : ScriptableObject
     [SerializeField] private string characterId = "new_character";
     [SerializeField] private string displayName = "New Character";
     [SerializeField] private string roleName = "Adventurer";
+    [SerializeField] private int startingAge = 30;
+    [SerializeField] private VillageJob startingVillageJob = VillageJob.None;
     [TextArea]
     [SerializeField] private string description;
 
@@ -21,6 +23,8 @@ public class CharacterDefinition : ScriptableObject
     public string CharacterId => string.IsNullOrWhiteSpace(characterId) ? name : characterId;
     public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
     public string RoleName => roleName;
+    public int StartingAge => startingAge;
+    public VillageJob StartingVillageJob => startingVillageJob;
     public string Description => description;
     public EntityStats Stats => stats;
     public string[] SkillNames => skillNames;
@@ -29,6 +33,7 @@ public class CharacterDefinition : ScriptableObject
 
     private void OnValidate()
     {
+        startingAge = Mathf.Clamp(startingAge, 16, 99);
         startingStress = Mathf.Max(0, startingStress);
         startingInjurySeverity = Mathf.Max(0, startingInjurySeverity);
     }

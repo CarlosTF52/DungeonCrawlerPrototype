@@ -4,6 +4,9 @@ using UnityEngine;
 public class VillageBank : MonoBehaviour
 {
     private static VillageBank instance;
+    private static bool hasLoadedStartingResources;
+    private static int savedGold;
+    private static int savedRelics;
 
     [Header("Starting Stored Resources")]
     [SerializeField] private int startingGold;
@@ -23,6 +26,14 @@ public class VillageBank : MonoBehaviour
     public int Gold { get; private set; }
     public int Relics { get; private set; }
     public bool HasAnyCurrency => Gold > 0 || Relics > 0;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSessionState()
+    {
+        instance = null;
+        hasLoadedStartingResources = false;
+        savedGold = 0;
+        savedRelics = 0;
+    }
 
     private void Awake()
     {
@@ -33,8 +44,20 @@ public class VillageBank : MonoBehaviour
         }
 
         instance = this;
-        Gold = Mathf.Max(0, startingGold);
-        Relics = Mathf.Max(0, startingRelics);
+
+        if (hasLoadedStartingResources)
+        {
+            Gold = savedGold;
+            Relics = savedRelics;
+        }
+        else
+        {
+            Gold = Mathf.Max(0, startingGold);
+            Relics = Mathf.Max(0, startingRelics);
+            SaveCurrentBalance();
+            hasLoadedStartingResources = true;
+        }
+
         DontDestroyOnLoad(gameObject);
     }
 
@@ -62,6 +85,7 @@ public class VillageBank : MonoBehaviour
 
         if (changed)
         {
+            SaveCurrentBalance();
             BalanceChanged?.Invoke();
         }
     }
@@ -155,6 +179,11 @@ public class VillageBank : MonoBehaviour
         goldCost = Mathf.Max(0, goldCost);
         relicCost = Mathf.Max(0, relicCost);
 
+        if (goldCost <= 0 && relicCost <= 0)
+        {
+            return false;
+        }
+
         if (!CanAfford(goldCost, relicCost))
         {
             return false;
@@ -162,8 +191,15 @@ public class VillageBank : MonoBehaviour
 
         Gold -= goldCost;
         Relics -= relicCost;
+        SaveCurrentBalance();
         BalanceChanged?.Invoke();
         return true;
+    }
+
+    private void SaveCurrentBalance()
+    {
+        savedGold = Gold;
+        savedRelics = Relics;
     }
 
     private static void EnsureInstanceExists()

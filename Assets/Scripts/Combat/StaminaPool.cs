@@ -10,6 +10,9 @@ public class StaminaPool : MonoBehaviour
     [SerializeField] private float attackStaminaCost = 3f;
     [SerializeField] private bool regenerateAutomatically = true;
 
+    [Header("Sprint Exhaustion")]
+    [SerializeField] private float sprintExhaustionDuration = 1.25f;
+
     [Header("Events")]
     [SerializeField] private StaminaChangedEvent staminaChanged;
 
@@ -19,8 +22,11 @@ public class StaminaPool : MonoBehaviour
     public float SprintStaminaCostPerSecond => stats != null ? stats.SprintStaminaCostPerSecond : sprintStaminaCostPerSecond;
     public float AttackStaminaCost => stats != null ? stats.AttackStaminaCost : attackStaminaCost;
     public bool HasStamina => CurrentStamina > 0f;
+    public bool IsSprintExhausted => Time.time < sprintExhaustedUntilTime;
+    public bool CanSprint => !IsSprintExhausted && CurrentStamina > 0f;
 
     private EntityStatsProvider statsProvider;
+    private float sprintExhaustedUntilTime;
 
     private void Awake()
     {
@@ -47,6 +53,7 @@ public class StaminaPool : MonoBehaviour
         staminaRegenPerSecond = Mathf.Max(0f, staminaRegenPerSecond);
         sprintStaminaCostPerSecond = Mathf.Max(0f, sprintStaminaCostPerSecond);
         attackStaminaCost = Mathf.Max(0f, attackStaminaCost);
+        sprintExhaustionDuration = Mathf.Max(0f, sprintExhaustionDuration);
     }
 
     private void Update()
@@ -68,6 +75,12 @@ public class StaminaPool : MonoBehaviour
         }
 
         CurrentStamina = Mathf.Clamp(CurrentStamina, 0f, MaxStamina);
+
+        if (CurrentStamina > 0f)
+        {
+            sprintExhaustedUntilTime = 0f;
+        }
+
         staminaChanged?.Invoke(CurrentStamina, MaxStamina);
     }
 
@@ -95,7 +108,29 @@ public class StaminaPool : MonoBehaviour
 
     public bool TrySpendSprintCost(float deltaTime)
     {
-        return TrySpend(SprintStaminaCostPerSecond * deltaTime);
+        if (!CanSprint)
+        {
+            return false;
+        }
+
+        float amount = SprintStaminaCostPerSecond * deltaTime;
+
+        if (amount <= 0f)
+        {
+            return true;
+        }
+
+        if (CurrentStamina <= amount)
+        {
+            CurrentStamina = 0f;
+            StartSprintExhaustion();
+            staminaChanged?.Invoke(CurrentStamina, MaxStamina);
+            return false;
+        }
+
+        CurrentStamina -= amount;
+        staminaChanged?.Invoke(CurrentStamina, MaxStamina);
+        return true;
     }
 
     public void Restore(float amount)
@@ -117,7 +152,13 @@ public class StaminaPool : MonoBehaviour
     public void RestoreToFull()
     {
         CurrentStamina = MaxStamina;
+        sprintExhaustedUntilTime = 0f;
         staminaChanged?.Invoke(CurrentStamina, MaxStamina);
+    }
+
+    private void StartSprintExhaustion()
+    {
+        sprintExhaustedUntilTime = Time.time + sprintExhaustionDuration;
     }
 
     private void ResolveStats()

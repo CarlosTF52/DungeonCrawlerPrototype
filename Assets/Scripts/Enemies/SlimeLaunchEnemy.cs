@@ -16,6 +16,11 @@ public class SlimeLaunchEnemy : MonoBehaviour
     [SerializeField] private float interruptedCooldown = 0.75f;
     [SerializeField] private bool endLaunchAfterDamagingTarget = true;
     [SerializeField] private float postHitRecoveryDelay;
+    [SerializeField] private bool ignoreTargetBodyCollisionDuringLaunch = true;
+    [SerializeField] private bool restoreBodyCollisionOnlyAfterSeparation = true;
+    [SerializeField] private float collisionRestoreCheckInterval = 0.05f;
+    [SerializeField] private bool disableLaunchContactKnockback = true;
+    [SerializeField] private Collider[] bodyColliders;
 
     [Header("Events")]
     [SerializeField] private UnityEvent windupStarted;
@@ -28,6 +33,9 @@ public class SlimeLaunchEnemy : MonoBehaviour
     private float nextAttackTime;
     private ContactDamage launchContactDamage;
     private bool launchHitTarget;
+    private Collider[] ignoredTargetColliders;
+    private bool isIgnoringTargetCollision;
+    private Coroutine restoreCollisionRoutine;
 
     private bool IsAttacking => attackRoutine != null;
 
@@ -61,6 +69,11 @@ public class SlimeLaunchEnemy : MonoBehaviour
             damageable = GetComponent<Damageable>();
         }
 
+        if (bodyColliders == null || bodyColliders.Length == 0)
+        {
+            bodyColliders = GetComponentsInChildren<Collider>();
+        }
+
         if (launchDamageCollider == null)
         {
             Debug.LogWarning($"{name}: SlimeLaunchEnemy needs a launch damage trigger assigned.", this);
@@ -68,6 +81,11 @@ public class SlimeLaunchEnemy : MonoBehaviour
         else
         {
             launchContactDamage = launchDamageCollider.GetComponent<ContactDamage>();
+
+            if (launchContactDamage != null && disableLaunchContactKnockback)
+            {
+                launchContactDamage.SetPlayTargetKnockback(false);
+            }
         }
 
         SetLaunchDamageActive(false);
@@ -105,6 +123,7 @@ public class SlimeLaunchEnemy : MonoBehaviour
     {
         interruptedCooldown = Mathf.Max(0f, interruptedCooldown);
         postHitRecoveryDelay = Mathf.Max(0f, postHitRecoveryDelay);
+        collisionRestoreCheckInterval = Mathf.Max(0.01f, collisionRestoreCheckInterval);
     }
 
     private void Update()
@@ -162,6 +181,7 @@ public class SlimeLaunchEnemy : MonoBehaviour
         LaunchStarted?.Invoke();
         launchStarted?.Invoke();
         launchHitTarget = false;
+        BeginIgnoringTargetBodyCollision();
         SetLaunchDamageActive(true);
 
         if (attackProfile.ClearVelocityBeforeLaunch)
@@ -211,6 +231,8 @@ public class SlimeLaunchEnemy : MonoBehaviour
         RecoveryStarted?.Invoke();
         recoveryStarted?.Invoke();
         yield return new WaitForSeconds(attackProfile.RecoveryDuration);
+
+        StartRestoringTargetBodyCollision();
 
         nextAttackTime = Time.time + attackProfile.CooldownDuration;
         AttackFinished?.Invoke();
@@ -317,6 +339,7 @@ public class SlimeLaunchEnemy : MonoBehaviour
 
         SetLaunchDamageActive(false);
         launchHitTarget = false;
+        EndIgnoringTargetBodyCollision();
 
         if (attachedRigidbody != null)
         {
@@ -346,6 +369,165 @@ public class SlimeLaunchEnemy : MonoBehaviour
 
         launchHitTarget = true;
         SetLaunchDamageActive(false);
+    }
+
+    private void BeginIgnoringTargetBodyCollision()
+    {
+        if (!ignoreTargetBodyCollisionDuringLaunch || target == null || bodyColliders == null)
+        {
+            return;
+        }
+
+        if (restoreCollisionRoutine != null)
+        {
+            StopCoroutine(restoreCollisionRoutine);
+            restoreCollisionRoutine = null;
+        }
+
+        ignoredTargetColliders = target.GetComponentsInChildren<Collider>();
+
+        for (int i = 0; i < bodyColliders.Length; i++)
+        {
+            Collider bodyCollider = bodyColliders[i];
+
+            if (!IsBodyCollisionCollider(bodyCollider))
+            {
+                continue;
+            }
+
+            for (int j = 0; j < ignoredTargetColliders.Length; j++)
+            {
+                Collider targetCollider = ignoredTargetColliders[j];
+
+                if (targetCollider != null && !targetCollider.isTrigger)
+                {
+                    Physics.IgnoreCollision(bodyCollider, targetCollider, true);
+                }
+            }
+        }
+
+        isIgnoringTargetCollision = true;
+    }
+
+    private void StartRestoringTargetBodyCollision()
+    {
+        if (!isIgnoringTargetCollision)
+        {
+            return;
+        }
+
+        if (!restoreBodyCollisionOnlyAfterSeparation)
+        {
+            EndIgnoringTargetBodyCollision();
+            return;
+        }
+
+        if (restoreCollisionRoutine != null)
+        {
+            StopCoroutine(restoreCollisionRoutine);
+        }
+
+        restoreCollisionRoutine = StartCoroutine(RestoreCollisionAfterSeparationRoutine());
+    }
+
+    private IEnumerator RestoreCollisionAfterSeparationRoutine()
+    {
+        while (IsOverlappingIgnoredTargetCollider())
+        {
+            yield return new WaitForSeconds(collisionRestoreCheckInterval);
+        }
+
+        EndIgnoringTargetBodyCollision();
+        restoreCollisionRoutine = null;
+    }
+
+    private void EndIgnoringTargetBodyCollision()
+    {
+        if (restoreCollisionRoutine != null)
+        {
+            StopCoroutine(restoreCollisionRoutine);
+            restoreCollisionRoutine = null;
+        }
+
+        if (!isIgnoringTargetCollision || bodyColliders == null || ignoredTargetColliders == null)
+        {
+            isIgnoringTargetCollision = false;
+            ignoredTargetColliders = null;
+            return;
+        }
+
+        for (int i = 0; i < bodyColliders.Length; i++)
+        {
+            Collider bodyCollider = bodyColliders[i];
+
+            if (!IsBodyCollisionCollider(bodyCollider))
+            {
+                continue;
+            }
+
+            for (int j = 0; j < ignoredTargetColliders.Length; j++)
+            {
+                Collider targetCollider = ignoredTargetColliders[j];
+
+                if (targetCollider != null && !targetCollider.isTrigger)
+                {
+                    Physics.IgnoreCollision(bodyCollider, targetCollider, false);
+                }
+            }
+        }
+
+        isIgnoringTargetCollision = false;
+        ignoredTargetColliders = null;
+    }
+
+    private bool IsBodyCollisionCollider(Collider bodyCollider)
+    {
+        return bodyCollider != null
+            && !bodyCollider.isTrigger
+            && bodyCollider != launchDamageCollider;
+    }
+
+    private bool IsOverlappingIgnoredTargetCollider()
+    {
+        if (bodyColliders == null || ignoredTargetColliders == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < bodyColliders.Length; i++)
+        {
+            Collider bodyCollider = bodyColliders[i];
+
+            if (!IsBodyCollisionCollider(bodyCollider))
+            {
+                continue;
+            }
+
+            for (int j = 0; j < ignoredTargetColliders.Length; j++)
+            {
+                Collider targetCollider = ignoredTargetColliders[j];
+
+                if (targetCollider == null || targetCollider.isTrigger)
+                {
+                    continue;
+                }
+
+                if (Physics.ComputePenetration(
+                    bodyCollider,
+                    bodyCollider.transform.position,
+                    bodyCollider.transform.rotation,
+                    targetCollider,
+                    targetCollider.transform.position,
+                    targetCollider.transform.rotation,
+                    out _,
+                    out _))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void StaggerChase(float duration)

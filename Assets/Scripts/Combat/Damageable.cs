@@ -20,6 +20,9 @@ public class Damageable : MonoBehaviour
     public int MaxHealth => stats != null ? stats.MaxHealth : maxHealth;
     public bool IsAlive => CurrentHealth > 0;
     public GameObject LastDamageSource { get; private set; }
+    public int LastDamageAmount { get; private set; }
+    public int LastHealthLost { get; private set; }
+    public int LastOverkillDamage { get; private set; }
     public bool IsInvincible => Time.time < invincibleUntilTime;
 
     public event Action Damaged;
@@ -63,13 +66,17 @@ public class Damageable : MonoBehaviour
             return;
         }
 
-        CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
-        healthChanged?.Invoke(CurrentHealth, MaxHealth);
+        SetCurrentHealth(CurrentHealth);
     }
 
     public void RestoreToFullHealth()
     {
-        CurrentHealth = MaxHealth;
+        SetCurrentHealth(MaxHealth);
+    }
+
+    public void SetCurrentHealth(int currentHealth)
+    {
+        CurrentHealth = Mathf.Clamp(currentHealth, 0, MaxHealth);
         healthChanged?.Invoke(CurrentHealth, MaxHealth);
     }
 
@@ -85,8 +92,12 @@ public class Damageable : MonoBehaviour
             return false;
         }
 
+        int previousHealth = CurrentHealth;
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
         LastDamageSource = source;
+        LastDamageAmount = amount;
+        LastHealthLost = previousHealth - CurrentHealth;
+        LastOverkillDamage = Mathf.Max(0, amount - previousHealth);
         invincibleUntilTime = Time.time + GetInvincibilityDuration();
         Damaged?.Invoke();
         damaged?.Invoke();

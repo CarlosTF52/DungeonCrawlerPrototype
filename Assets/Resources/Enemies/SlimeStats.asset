@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6577fc6bf8a80946a65ce898bf85d0e, type: 3}
   m_Name: SlimeStats
   m_EditorClassIdentifier: Assembly-CSharp::EntityStats
-  maxHealth: 10
+  maxHealth: 4
   maxStamina: 10
   staminaRegenPerSecond: 2
   sprintStaminaCostPerSecond: 4

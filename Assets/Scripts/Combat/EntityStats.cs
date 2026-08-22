@@ -26,6 +26,30 @@ public class EntityStats : ScriptableObject
     public int ContactDamage => contactDamage;
     public float ContactHitCooldown => contactHitCooldown;
 
+    public EntityStats CreateRuntimeCopy(
+        string copyName,
+        int maxHealthOffset,
+        float maxStaminaOffset,
+        float staminaRegenOffset,
+        float sprintStaminaCostOffset,
+        float attackStaminaCostOffset,
+        int attackPowerOffset)
+    {
+        EntityStats copy = CreateInstance<EntityStats>();
+        copy.name = string.IsNullOrWhiteSpace(copyName) ? $"{name} Runtime" : copyName;
+        copy.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+        copy.maxHealth = Mathf.Max(1, maxHealth + maxHealthOffset);
+        copy.maxStamina = Mathf.Max(0f, maxStamina + maxStaminaOffset);
+        copy.staminaRegenPerSecond = Mathf.Max(0f, staminaRegenPerSecond + staminaRegenOffset);
+        copy.sprintStaminaCostPerSecond = Mathf.Max(0f, sprintStaminaCostPerSecond + sprintStaminaCostOffset);
+        copy.attackStaminaCost = Mathf.Max(0f, attackStaminaCost + attackStaminaCostOffset);
+        copy.invincibilityDuration = Mathf.Max(0f, invincibilityDuration);
+        copy.attackPower = Mathf.Max(1, attackPower + attackPowerOffset);
+        copy.contactDamage = Mathf.Max(1, contactDamage);
+        copy.contactHitCooldown = Mathf.Max(0f, contactHitCooldown);
+        return copy;
+    }
+
     private void OnValidate()
     {
         maxHealth = Mathf.Max(1, maxHealth);

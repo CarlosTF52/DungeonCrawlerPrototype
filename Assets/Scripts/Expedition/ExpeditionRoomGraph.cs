@@ -176,6 +176,15 @@ public class ExpeditionRoomGraph
         return graph;
     }
 
+    public static ExpeditionRoomGraph CreateEntranceOnly(int runNumber)
+    {
+        ExpeditionRoomGraph graph = new ExpeditionRoomGraph();
+        System.Random random = new System.Random(Environment.TickCount ^ (runNumber * 397));
+
+        graph.AddPathNode(ExpeditionRoomType.Entrance, 0, random, 0);
+        return graph;
+    }
+
     public static ExpeditionRoomGraph BuildFromRoute(IReadOnlyList<ExpeditionRoomDefinition> roomRoute)
     {
         ExpeditionRoomGraph graph = new ExpeditionRoomGraph();
@@ -216,6 +225,12 @@ public class ExpeditionRoomGraph
     public int GetObjectivePathIndex(int nodeId)
     {
         return objectivePathNodeIds.IndexOf(nodeId);
+    }
+
+    public ExpeditionRoomNode AppendGeneratedPathRoom(ExpeditionRoomType roomType, int dangerRating, int randomSeed, int depth)
+    {
+        System.Random random = new System.Random(randomSeed);
+        return AddPathNode(roomType, dangerRating, random, depth);
     }
 
     public string BuildObjectivePathLabel(int currentNodeId)

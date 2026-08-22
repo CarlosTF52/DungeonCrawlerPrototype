@@ -3,7 +3,6 @@ using UnityEngine;
 public class PlayerCharacterApplier : MonoBehaviour
 {
     [SerializeField] private EntityStatsProvider statsProvider;
-    [SerializeField] private bool restoreVitalsWhenCharacterChanges = true;
 
     private CharacterRosterManager rosterManager;
 
@@ -19,6 +18,7 @@ public class PlayerCharacterApplier : MonoBehaviour
     {
         rosterManager = CharacterRosterManager.Instance;
         rosterManager.ActiveCharacterChanged += ApplyActiveCharacter;
+        rosterManager.CharacterStatusChanged += ApplyActiveCharacter;
         ApplyActiveCharacter();
     }
 
@@ -27,46 +27,17 @@ public class PlayerCharacterApplier : MonoBehaviour
         if (rosterManager != null)
         {
             rosterManager.ActiveCharacterChanged -= ApplyActiveCharacter;
+            rosterManager.CharacterStatusChanged -= ApplyActiveCharacter;
         }
     }
 
     public void ApplyActiveCharacter()
     {
-        CharacterDefinition activeCharacter = rosterManager != null ? rosterManager.ActiveCharacter : null;
-
-        if (activeCharacter == null || activeCharacter.Stats == null)
+        if (rosterManager == null)
         {
             return;
         }
 
-        if (statsProvider != null)
-        {
-            statsProvider.SetStats(activeCharacter.Stats);
-        }
-
-        Damageable damageable = GetComponentInParent<Damageable>();
-        StaminaPool staminaPool = GetComponentInParent<StaminaPool>();
-        MeleeAttack meleeAttack = GetComponentInParent<MeleeAttack>();
-        PlayerWeaponHitbox[] weaponHitboxes = GetComponentsInChildren<PlayerWeaponHitbox>(true);
-
-        if (damageable != null)
-        {
-            damageable.SetStats(activeCharacter.Stats, restoreVitalsWhenCharacterChanges);
-        }
-
-        if (staminaPool != null)
-        {
-            staminaPool.SetStats(activeCharacter.Stats, restoreVitalsWhenCharacterChanges);
-        }
-
-        if (meleeAttack != null)
-        {
-            meleeAttack.SetStats(activeCharacter.Stats);
-        }
-
-        for (int i = 0; i < weaponHitboxes.Length; i++)
-        {
-            weaponHitboxes[i].SetStats(activeCharacter.Stats);
-        }
+        rosterManager.ApplyActiveCharacterToPlayer(gameObject);
     }
 }

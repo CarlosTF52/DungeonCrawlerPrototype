@@ -116,7 +116,14 @@ public class PlayerWeaponHitbox : MonoBehaviour
 
     private int GetDamage()
     {
-        return stats != null ? stats.AttackPower : damage;
+        int baseDamage = stats != null ? stats.AttackPower : damage;
+
+        if (attackerTeam == CombatTeam.Player)
+        {
+            baseDamage += VillageUpgradeManager.Instance.WeaponDamageBonus;
+        }
+
+        return Mathf.Max(1, baseDamage);
     }
 
     private bool CanHitCollider(Collider other)

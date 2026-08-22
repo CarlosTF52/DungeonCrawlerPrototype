@@ -22,6 +22,15 @@ public class ExpeditionRunManager : MonoBehaviour
     [SerializeField] private bool useInspectorRoomRoute;
     [SerializeField] private List<ExpeditionRoomDefinition> inspectorRoomRoute = new List<ExpeditionRoomDefinition>();
 
+    [Header("Rolling Random Route")]
+    [SerializeField] private bool randomizeRoomOnAdvance = true;
+    [SerializeField, Range(0f, 1f)] private float combatChance = 0.45f;
+    [SerializeField, Range(0f, 1f)] private float lootChance = 0.25f;
+    [SerializeField, Range(0f, 1f)] private float objectiveChance = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float extractionChance = 0.1f;
+    [SerializeField] private int minimumDepthBeforeExtraction = 3;
+    [SerializeField] private int dangerIncreasesEveryRooms = 2;
+
     public static ExpeditionRunManager Instance
     {
         get
@@ -50,6 +59,7 @@ public class ExpeditionRunManager : MonoBehaviour
     public bool IsInExtractionRoom => CurrentRoom != null && CurrentRoom.HasExtraction;
     public bool CanExtract => IsInExpedition && IsInExtractionRoom && (allowEarlyExtraction || ObjectiveProgress >= ObjectivesRequiredToExtract);
     public bool HasGeneratedRoomGraph => RoomGraph != null && RoomGraph.Nodes.Count > 0;
+    public bool UsesRollingRandomRoute => !useInspectorRoomRoute && randomizeRoomOnAdvance;
     public string ObjectivePathLabel => HasGeneratedRoomGraph ? RoomGraph.BuildObjectivePathLabel(CurrentRoom != null ? CurrentRoom.Id : -1) : "No expedition map";
     public string ExtractionStatus
     {
@@ -139,7 +149,7 @@ public class ExpeditionRunManager : MonoBehaviour
             return;
         }
 
-        if (!AdvanceToNextObjectivePathRoom())
+        if (!AdvanceToNextRoom())
         {
             if (autoExtractWhenPastExtractionRoom && CanExtract)
             {
@@ -166,7 +176,7 @@ public class ExpeditionRunManager : MonoBehaviour
             return;
         }
 
-        MoveCollectedLootToPouch();
+        RecordExtractedLoot();
         EndExpedition(ExpeditionOutcome.Extracted);
     }
 
@@ -206,6 +216,7 @@ public class ExpeditionRunManager : MonoBehaviour
         }
 
         GoldCollected += amount;
+        PlayerCurrencyPouch.Instance.Add(amount, 0);
         NotifyStateChanged();
         return true;
     }
@@ -224,6 +235,7 @@ public class ExpeditionRunManager : MonoBehaviour
         }
 
         RelicsCollected += amount;
+        PlayerCurrencyPouch.Instance.Add(0, amount);
         NotifyStateChanged();
         return true;
     }
@@ -248,6 +260,17 @@ public class ExpeditionRunManager : MonoBehaviour
 
     private void EndExpedition(ExpeditionOutcome outcome)
     {
+        CharacterRosterManager rosterManager = CharacterRosterManager.Instance;
+        string runnerCharacterId = rosterManager.ActiveCharacter != null ? rosterManager.ActiveCharacter.CharacterId : string.Empty;
+        rosterManager.RecordActiveCharacterHealthFromScenePlayer();
+
+        if (outcome == ExpeditionOutcome.Extracted)
+        {
+            rosterManager.RecoverRestingCharactersAfterCompletedRun(runnerCharacterId);
+        }
+
+        rosterManager.SelectFirstAvailableCharacterIfActiveUnavailable();
+
         IsInExpedition = false;
         LastOutcome = outcome;
         RoomGraph = null;
@@ -258,11 +281,10 @@ public class ExpeditionRunManager : MonoBehaviour
         LoadConfiguredScene(hubSceneName, hubSpawnId);
     }
 
-    private void MoveCollectedLootToPouch()
+    private void RecordExtractedLoot()
     {
         LastExtractedGold = GoldCollected;
         LastExtractedRelics = RelicsCollected;
-        PlayerCurrencyPouch.Instance.Add(LastExtractedGold, LastExtractedRelics);
     }
 
     private void LoadConfiguredScene(string sceneName, string spawnId)
@@ -279,6 +301,11 @@ public class ExpeditionRunManager : MonoBehaviour
     private void NotifyStateChanged()
     {
         StateChanged?.Invoke();
+    }
+
+    private bool AdvanceToNextRoom()
+    {
+        return UsesRollingRandomRoute ? AdvanceToRandomRoom() : AdvanceToNextObjectivePathRoom();
     }
 
     private bool AdvanceToNextObjectivePathRoom()
@@ -304,6 +331,26 @@ public class ExpeditionRunManager : MonoBehaviour
         return true;
     }
 
+    private bool AdvanceToRandomRoom()
+    {
+        if (!HasGeneratedRoomGraph)
+        {
+            RoomGraph = CreateRoomGraph();
+            CurrentObjectivePathIndex = 0;
+            CurrentRoom = RoomGraph.Entrance;
+        }
+
+        int nextPathIndex = CurrentObjectivePathIndex + 1;
+        ExpeditionRoomType nextRoomType = RollNextRoomType(nextPathIndex + 1);
+        int dangerRating = CalculateRollingDanger(nextPathIndex + 1);
+        int randomSeed = Environment.TickCount ^ (RunNumber * 397) ^ (nextPathIndex * 7919);
+
+        CurrentRoom = RoomGraph.AppendGeneratedPathRoom(nextRoomType, dangerRating, randomSeed, nextPathIndex + 1);
+        CurrentObjectivePathIndex = nextPathIndex;
+        Depth = CurrentObjectivePathIndex + 1;
+        return true;
+    }
+
     private ExpeditionRoomGraph CreateRoomGraph()
     {
         if (useInspectorRoomRoute)
@@ -318,7 +365,53 @@ public class ExpeditionRunManager : MonoBehaviour
             Debug.LogWarning("Inspector room route is enabled, but no valid rooms are configured. Falling back to generated route.", this);
         }
 
+        if (randomizeRoomOnAdvance)
+        {
+            return ExpeditionRoomGraph.CreateEntranceOnly(RunNumber);
+        }
+
         return ExpeditionRoomGraph.Generate(RunNumber, ObjectivesRequiredToExtract);
+    }
+
+    private ExpeditionRoomType RollNextRoomType(int nextDepth)
+    {
+        float extractionWeight = nextDepth >= minimumDepthBeforeExtraction ? extractionChance : 0f;
+        float totalWeight = Mathf.Max(0f, combatChance) + Mathf.Max(0f, lootChance) + Mathf.Max(0f, objectiveChance) + Mathf.Max(0f, extractionWeight);
+
+        if (totalWeight <= 0f)
+        {
+            return ExpeditionRoomType.Combat;
+        }
+
+        float roll = UnityEngine.Random.Range(0f, totalWeight);
+        float cursor = Mathf.Max(0f, combatChance);
+
+        if (roll < cursor)
+        {
+            return ExpeditionRoomType.Combat;
+        }
+
+        cursor += Mathf.Max(0f, lootChance);
+
+        if (roll < cursor)
+        {
+            return ExpeditionRoomType.Loot;
+        }
+
+        cursor += Mathf.Max(0f, objectiveChance);
+
+        if (roll < cursor)
+        {
+            return ExpeditionRoomType.Objective;
+        }
+
+        return ExpeditionRoomType.Extraction;
+    }
+
+    private int CalculateRollingDanger(int nextDepth)
+    {
+        int safeInterval = Mathf.Max(1, dangerIncreasesEveryRooms);
+        return Mathf.Clamp(1 + ((nextDepth - 1) / safeInterval), 1, 5);
     }
 
     private static void EnsureInstanceExists()

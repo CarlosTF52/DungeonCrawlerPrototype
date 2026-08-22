@@ -8,6 +8,10 @@ Purpose: Scope, milestones, decisions, project status, repo status, and next-ste
 
 Status: Active management hub.
 
+Related backlog:
+
+- `ProjectDocs/FUTURE_FEATURES.md` tracks nice-to-have future systems that should stay outside Milestone 1 unless explicitly promoted.
+
 ## Scene Management
 
 Task: `Plan first scene setup`
@@ -51,6 +55,29 @@ Delivered:
 - Currency HUD through TextMeshPro via `CurrencyHud`.
 - Runtime stat refresh support for character roster swaps.
 
+## Player UIX
+
+Task: `Develop player UI indicators`
+
+Status: Active foundation started.
+
+Delivered:
+
+- `PlayerVitalsHud` supports health/stamina/sanity fill indicators, optional TextMeshPro number labels, smoothed fill updates, and low-resource warning colors.
+- `CurrencyHud` remains the currency indicator for expedition loot, player pouch, or safe village bank values.
+- `PlayerCharacterHud` shows active character name, age, status, job, health, stamina, injury, current/max stress, stress tolerance, and attack.
+- `ExpeditionInfoHud` shows current run/depth, room type, danger, objective progress, carried loot, and extraction status as a real TMP information box instead of relying on `OnGUI` debug output.
+- `PlayerCharacterDefeatHandler` can add stress to the active character when the player takes damage, currently using a temporary 1 stress per health lost rule. Stress starts at 0 and defaults to a tunable max of 10.
+
+Current rule:
+
+- Persistent player canvas owns player-state UI: vitals, carried currency, active character indicator, expedition info, damage feedback, interact prompts, and future stress/horror overlays.
+- Hub Canvas owns village-location panels: tavern roster, bank, blacksmith, ward, cemetery, and future village management UI.
+
+Next step:
+
+- Build and tune the Unity canvas layout, wire the new stress/sanity bar, then retire matching debug HUDs after playtesting.
+
 Future combat ideas:
 
 - Hit pause/camera shake.
@@ -80,7 +107,10 @@ Delivered:
 - `VillageBankInteractable`.
 - `DungeonMerchantDebugPurchase`.
 - Debug/testing support for starting an expedition directly in a dungeon scene.
-- Successful extraction moves carried run loot into the player pouch; physical bank interaction secures or withdraws resources.
+- Dungeon pickups immediately update the player pouch; physical bank interaction secures or withdraws resources.
+- Modular village upgrade system with `UpgradeDefinition`, `UpgradeOwnerScope`, `VillageUpgradeManager`, `BlacksmithUpgradeInteractable`, `TavernUpgradeInteractable`, and `VillageUpgradeDebugHud`.
+- First concrete character upgrade: `BlacksmithWeaponDamage` / Sharpened Weapons, which spends safe banked resources and increases weapon damage for the active character only.
+- First concrete village upgrade: `TavernRecovery` / Better Beds, which spends safe banked resources and increases resting health recovery after successful extraction.
 
 Current rule:
 
@@ -90,7 +120,7 @@ Current rule:
 
 Next step:
 
-- Replace debug spend with one real upgrade station/effect so a successful expedition changes the player or hub in a concrete way.
+- Place and test the blacksmith station in the hub scene, then retire or hide `VillageBankDebugSpend` once the upgrade path is comfortable.
 
 ## Procedural Expedition Map
 
@@ -126,17 +156,21 @@ Status: Active foundation working.
 
 Delivered:
 
-- Physical bank flow: extracted loot enters the player pouch, not the safe bank automatically.
-- Deposit/withdraw bank interactions.
+- Physical bank flow: dungeon loot enters the player pouch, not the safe bank automatically.
+- Deposit/withdraw bank interactions with an in-range HUD showing carried currency, banked currency, and the configured transfer action.
 - Player carried pouch for future dungeon merchants.
 - Currency HUD hardening for current expedition, player pouch, and village bank sources.
-- Character roster foundation with `CharacterDefinition`, `CharacterRosterManager`, `PlayerCharacterApplier`, `TavernCharacterSelector`, and roster HUD/debug display.
+- Character roster foundation with `CharacterDefinition`, `CharacterRosterManager`, `PlayerCharacterApplier`, `TavernCharacterSelector`, and roster HUD/debug display that includes active character progression and stored current health; the main roster HUD is hidden until the player stands in a tavern selector trigger.
 - Starter characters: Warden, Scout, Occultist.
-- Stress/injury placeholder fields on character definitions.
+- Runtime character identity/state: generated names, starting age, status, village job placeholder, stress placeholder, injury severity, random stat offsets, and age-modified effective stats.
+- Roster-owned health state: wounded characters keep missing health when swapped out, and resting characters recover a small amount after another character successfully extracts. Better Beds increases that recovery amount.
+- Resurrection Ward interactable shows recoverable fallen characters only while standing in its trigger, including age, status, runs until return, injuries, stress, and job; pressing E cycles fallen characters.
+- Cemetery interactable shows permanently dead characters only while standing in its trigger, including age at death, no-return status, injuries, stress, and job; pressing E cycles graves.
+- Cursed defeat v1: `PlayerCharacterDefeatHandler` can age the active character by `10 + overkill damage`, mark them fallen or permanently dead at age 100, add injury severity, clear carried pouch currency, and fail the active expedition.
 
 Next step:
 
-- Build one real upgrade station/effect after proving the character/pouch/expedition loop.
+- Add `PlayerCharacterDefeatHandler` to the player, then test the defeat/return flow and tune age penalties before building real job assignment UI.
 
 ## Enemies
 

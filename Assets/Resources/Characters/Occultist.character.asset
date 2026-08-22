@@ -15,6 +15,8 @@ MonoBehaviour:
   characterId: occultist
   displayName: Occultist
   roleName: Risk Caster
+  startingAge: 99
+  startingVillageJob: 0
   description: Fragile damage-focused character prepared for stranger skills later.
   stats: {fileID: 11400000, guid: 8f038c489bb0401aa755aeaa5428763c, type: 2}
   skillNames:
